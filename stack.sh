@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-STACK_NAME="TPKC-stack"
+STACK_NAME="TPKC"
 CERTS_DIR="./certs"
 CERT_FILE="$CERTS_DIR/cert.crt"
 KEY_FILE="$CERTS_DIR/private.key"
