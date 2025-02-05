@@ -1,0 +1,137 @@
+name: TPKW-stack
+
+services:
+  traefik:
+    image: traefik:v3
+    container_name: traefik
+    restart: unless-stopped
+    env_file:
+      - .env
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"  # Disable insecure access to the dashboard
+      - "--api.dashboard=true"    # Enable the dashboard
+      - "--providers.docker=true"  # Enable Docker provider
+      - --accesslog.filepath=/var/log/traefik-access.log
+      - --providers.docker.network=traefik
+      - "--entrypoints.web.address=:80"  # HTTP entrypoint
+      - "--entrypoints.websecure.address=:443"  # HTTPS entrypoint
+    ports:
+      - "80:80"  # Expose HTTP
+      - "443:443"  # Expose HTTPS
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow Traefik to access Docker
+      - "./Traefik/traefik.yml:/etc/traefik/traefik.yml"
+      - "./Traefik/dynconf.yml:/dynconf/dynconf.yml"
+      - "./certs/:/etc/x509/https" # map certificates to container
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"  # Enable Traefik for this service
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${BASE_HOST}`)"  # Dashboard access rule
+      - "traefik.http.routers.traefik.entrypoints=websecure"  # Use HTTPS
+      - "traefik.http.routers.traefik.tls=true"  # Enable TLS
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"  # Dashboard port
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_USERFILE_CONTENTS}"
+
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    command: -H tcp://tasks.agent:9001 --log-level DEBUG
+    restart: unless-stopped
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - 'portainer_data:/data'
+    ports:
+      - "9000:9000"
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.${BASE_HOST}`)"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.tls=true"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+  keycloak:
+    container_name: keycloak_app
+    image: quay.io/keycloak/keycloak:latest
+    restart: unless-stopped
+    ports:
+      - "8443:8443"
+    volumes:
+      - "./certs/:/etc/x509/https" # map certificates to container
+    env_file:
+      - .env
+    environment:
+      KC_PROXY_ADDRESS_FORWARDING: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HOSTNAME: "https://auth.${BASE_HOST}:8443/"
+      KC_PROXY_HEADERS: xforwarded
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD}
+      KC_DB_URL: jdbc:postgresql://keycloak_postgres:5432/keycloak
+      KC_DB: postgres
+      KC_DB_USERNAME:  ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HTTPS_CERTIFICATE_FILE: /etc/x509/https/cert.crt
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /etc/x509/https/private.key
+    depends_on:
+      - keycloak_postgres
+    networks:
+      - traefik
+    command:
+      # Start the server with out certs
+      - 'start'
+      - "--log-level=DEBUG"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`auth.${BASE_HOST}`)"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls=true"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8443"
+  keycloak_postgres:
+    container_name: keycloak_postgres
+    image: postgres:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - traefik
+
+  whoami:
+    image: traefik/whoami
+    container_name: test_app
+    restart: unless-stopped
+    ports: 
+      - "2001:2001"
+    command:
+    - --port=2001
+    - --name=iamfoo
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`test.${BASE_HOST}`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=2001"
+      - "traefik.http.routers.dashboard.middlewares=keycloak-middleware@file"
+
+volumes:
+  portainer_data:
+  postgres_data:
+
+networks:
+  traefik:
+    external: true
+    name: traefik

@@ -1,0 +1,19 @@
+tls:
+  certificates:
+    - certFile: "/etc/x509/https/cert.crt"
+      keyfile: "/etc/x509/https/private.key"
+      stores:
+        - default
+http:
+  middlewares:
+    keycloak-middleware:
+      plugin:
+        keycloakopenid:
+          KeycloakURL: "https://auth.{{env "BASE_HOST"}}:8443" # <- Also supports complete URL, e.g. https://my-keycloak-url.com/auth
+          ClientID: "{{env "KC_MIDDLEWARE_CLIENT_ID"}}"
+          ClientSecret: "{{env "KC_MIDDLEWARE_CLIENT_SECRET"}}"
+          KeycloakRealm: "{{env "KC_MIDDLEWARE_REALM"}}"
+          Scope: "openid profile emai"
+          TokenCookieName: "AUTH_TOKEN"
+          UseAuthHeader: "false"
+          IgnorePathPrefixes: "/api,/favicon.ico"
