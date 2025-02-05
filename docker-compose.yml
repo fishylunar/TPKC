@@ -9,29 +9,29 @@ services:
       - .env
     command:
       - "--log.level=DEBUG"
-      - "--api.insecure=true"  # Disable insecure access to the dashboard
-      - "--api.dashboard=true"    # Enable the dashboard
-      - "--providers.docker=true"  # Enable Docker provider
+      - "--api.insecure=true" # Disable insecure access to the dashboard
+      - "--api.dashboard=true" # Enable the dashboard
+      - "--providers.docker=true" # Enable Docker provider
       - --accesslog.filepath=/var/log/traefik-access.log
       - --providers.docker.network=traefik
-      - "--entrypoints.web.address=:80"  # HTTP entrypoint
-      - "--entrypoints.websecure.address=:443"  # HTTPS entrypoint
+      - "--entrypoints.web.address=:80" # HTTP entrypoint
+      - "--entrypoints.websecure.address=:443" # HTTPS entrypoint
     ports:
-      - "80:80"  # Expose HTTP
-      - "443:443"  # Expose HTTPS
+      - "80:80" # Expose HTTP
+      - "443:443" # Expose HTTPS
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  # Allow Traefik to access Docker
+      - /var/run/docker.sock:/var/run/docker.sock # Allow Traefik to access Docker
       - "./Traefik/traefik.yml:/etc/traefik/traefik.yml"
       - "./Traefik/dynconf.yml:/dynconf/dynconf.yml"
       - "./certs/:/etc/x509/https" # map certificates to container
     networks:
       - traefik
     labels:
-      - "traefik.enable=true"  # Enable Traefik for this service
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${BASE_HOST}`)"  # Dashboard access rule
-      - "traefik.http.routers.traefik.entrypoints=websecure"  # Use HTTPS
-      - "traefik.http.routers.traefik.tls=true"  # Enable TLS
-      - "traefik.http.services.traefik.loadbalancer.server.port=8080"  # Dashboard port
+      - "traefik.enable=true" # Enable Traefik for this service
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${BASE_HOST}`)" # Dashboard access rule
+      - "traefik.http.routers.traefik.entrypoints=websecure" # Use HTTPS
+      - "traefik.http.routers.traefik.tls=true" # Enable TLS
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080" # Dashboard port
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_USERFILE_CONTENTS}"
 
@@ -41,8 +41,8 @@ services:
     command: -H tcp://tasks.agent:9001 --log-level DEBUG
     restart: unless-stopped
     volumes:
-      - '/var/run/docker.sock:/var/run/docker.sock'
-      - 'portainer_data:/data'
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "portainer_data:/data"
     ports:
       - "9000:9000"
     networks:
@@ -74,7 +74,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD}
       KC_DB_URL: jdbc:postgresql://keycloak_postgres:5432/keycloak
       KC_DB: postgres
-      KC_DB_USERNAME:  ${POSTGRES_USER}
+      KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_HTTPS_CERTIFICATE_FILE: /etc/x509/https/cert.crt
       KC_HTTPS_CERTIFICATE_KEY_FILE: /etc/x509/https/private.key
@@ -84,7 +84,7 @@ services:
       - traefik
     command:
       # Start the server with out certs
-      - 'start'
+      - "start"
       - "--log-level=DEBUG"
     labels:
       - "traefik.enable=true"
@@ -112,11 +112,11 @@ services:
     image: traefik/whoami
     container_name: test_app
     restart: unless-stopped
-    ports: 
+    ports:
       - "2001:2001"
     command:
-    - --port=2001
-    - --name=iamfoo
+      - --port=2001
+      - --name=iamfoo
     networks:
       - traefik
     labels:
