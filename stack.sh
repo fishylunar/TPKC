@@ -113,17 +113,22 @@ stop_stack() {
 
 # Function to reset the stack
 reset_stack() {
-    echo "🗑️ Stopping and removing all containers in stack/project: $STACK_NAME..."
+    echo "🗑️ Stopping and removing all containers..."
+    docker compose down --remove-orphans
     
-    docker ps -a --filter "label=com.docker.compose.project=$STACK_NAME" -q | xargs -r docker rm -f
+    echo "🗑️ Removing all containers associated with the compose project..."
+    docker compose rm -f -s -v
     
-    echo "🗑️ Removing all associated volumes..."
-    docker volume ls --filter "label=com.docker.compose.project=$STACK_NAME" -q | xargs -r docker volume rm
+    echo "🗑️ Removing all images used by the compose project..."
+    docker compose config --images | xargs -r docker rmi -f
+    
+    echo "🗑️ Removing all volumes..."
+    docker compose down --volumes
     
     echo "🗑️ Removing Docker network '$NETWORK_NAME'..."
-    docker network rm "$NETWORK_NAME" 2>/dev/null || echo "Network '$NETWORK_NAME' already removed."
+    docker network rm "$NETWORK_NAME" 2>/dev/null || true
     
-    echo "✅ Cleanup completed for stack/project: $STACK_NAME."
+    echo "✅ Cleanup completed for stack: $STACK_NAME."
 }
 
 # Handle script arguments
