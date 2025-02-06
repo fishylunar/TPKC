@@ -60,7 +60,7 @@ KEYCLOAK_PASSWORD=<admin password>
 POSTGRES_USER=<postgres username>
 POSTGRES_PASSWORD=<postgres password>
 BASE_HOST=<root host name, eg google.com>
-TRAEFIK_USERFILE_CONTENTS=<traefik userfile contents user:hashed>
+TRAEFIK_USERFILE_CONTENTS="<traefik userfile contents user:hashed>"
 KC_MIDDLEWARE_REALM=<keycloak realm>
 KC_MIDDLEWARE_CLIENT_ID=<keycloak middleware client id>
 KC_MIDDLEWARE_CLIENT_SECRET=<keycloak middleware client secret>
@@ -74,13 +74,8 @@ openssl rand -hex 32
 
 **TRAEFIK_USERFILE_CONTENTS** should be set like so:
 
-- Run this command in your terminal (You may need to install `apache2-utils` first `sudo apt install apache2-utils`)
-
-```shell
-echo $(htpasswd -nB user) | sed -e s/\\$/\\$\\$/g
-```
-
-- take the output of this and put it as the variable `RAEFIK_USERFILE_CONTEN`
+- Generate a htpasswd (user:(sha1)hash) and put it in quotes, in the variable `RAEFIK_USERFILE_CONTEN`
+  You can use a website like this if you dont know how to do it from the terminal: https://hostingcanada.org/htpasswd-generator/
 
 - after this you can run the stack by running
 
