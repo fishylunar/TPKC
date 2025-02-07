@@ -43,11 +43,11 @@ A: test.yourdomain.com ; <public-server-ip>
 ### If you dont want to use a public domain name, you can edit the Hosts file like so:
 Hosts config (on the server)
 ```txt
-127.0.0.1		auth.<yourdomain.com>
-127.0.0.1		dashboard.<yourdomain.com>
-127.0.0.1		traefik.<yourdomain.com>
-127.0.0.1		test.<yourdomain.com>
-127.0.0.1		portainer.<yourdomain.com>
+localhost		auth.<yourdomain.com>
+localhost		dashboard.<yourdomain.com>
+localhost		traefik.<yourdomain.com>
+localhost		test.<yourdomain.com>
+localhost		portainer.<yourdomain.com>
 ```
 Make sure to get the internal ip of your server as well.
 Then on the machine you want to be able to access the services on:
