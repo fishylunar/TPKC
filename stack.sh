@@ -6,6 +6,61 @@ CERT_FILE="$CERTS_DIR/cert.crt"
 KEY_FILE="$CERTS_DIR/private.key"
 NETWORK_NAME="traefik"
 
+# Function to generate self-signed certificate
+gen_selfsigned_cert() {
+    echo "🔑 Generating self-signed certificate..."
+
+    # Create the certificates directory if it doesn't exist
+    mkdir -p "$CERTS_DIR"
+
+    # Prompt for domains
+    read -p "Enter a comma-separated list of domains (e.g., example.com, www.example.com): " DOMAIN_INPUT
+    IFS=',' read -r -a DOMAINS <<< "$DOMAIN_INPUT"
+
+    # Generate a private key
+    openssl genrsa -out "$KEY_FILE" 2048
+
+    # Create a configuration file for the certificate
+    cat > openssl.cnf <<EOL
+[ req ]
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+x509_extensions    = v3_req
+prompt             = no
+
+[ req_distinguished_name ]
+C  = DK
+ST = Some-State
+L  = Some-City
+O  = Your Organization
+OU = Your Organizational Unit
+CN = ${DOMAINS[0]}
+
+[ v3_req ]
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth, clientAuth
+subjectAltName = @alt_names
+
+[ alt_names ]
+EOL
+
+    # Add each domain to the configuration file
+    for i in "${!DOMAINS[@]}"; do
+        echo "DNS.$((i + 1)) = ${DOMAINS[i]}" >> openssl.cnf
+    done
+
+    # Generate the self-signed certificate
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+      -keyout "$KEY_FILE" -out "$CERT_FILE" -config openssl.cnf
+
+    # Clean up
+    rm openssl.cnf
+
+    echo "✅ Self-signed certificate and private key generated:"
+    echo "   Private Key: $KEY_FILE"
+    echo "   Certificate: $CERT_FILE"
+}
+
 # Function to check and create the "traefik" Docker network
 check_create_docker_network() {
     if docker network ls --format "{{.Name}}" | grep -q "^$NETWORK_NAME$"; then
@@ -138,6 +193,9 @@ case "$1" in
     ;;
     stop)
         stop_stack
+    ;;
+    ssl)
+        gen_selfsigned_cert
     ;;
     reset)
         reset_stack

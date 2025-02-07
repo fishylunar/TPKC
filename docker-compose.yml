@@ -38,11 +38,16 @@ services:
   portainer:
     image: portainer/portainer-ce
     container_name: portainer
-    command: -H tcp://tasks.agent:9001 --log-level DEBUG
+    command:
+      - -H tcp://tasks.agent:9001
+      - --log-level DEBUG
+      - --sslcert /etc/x509/https/cert.crt
+      - --sslkey /etc/x509/https/private.key
     restart: unless-stopped
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "portainer_data:/data"
+      - "./certs/:/etc/x509/https"
     ports:
       - "9000:9000"
     networks:
