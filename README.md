@@ -120,7 +120,11 @@ openssl rand -hex 32
 **TRAEFIK_USERFILE_CONTENTS** should be set like so:
 
 - Generate a htpasswd (user:(sha1)hash) and put it in quotes, in the variable `RAEFIK_USERFILE_CONTEN`
-  You can use a website like this if you dont know how to do it from the terminal: https://hostingcanada.org/htpasswd-generator/
+- You may need to install apache2-utils to use the command below. Run this command to install it: `sudo apt install apache2-utils`
+- Then generate one like so:
+```shell
+htpasswd -nbs <username> <password>
+```
 
 - after this you can run the stack by running
 
